@@ -1,4 +1,4 @@
-"""Aplikasi pencatat pengeluaran pribadi (Streamlit + SQLite + snapshot GitHub)."""
+"""Aplikasi pencatat pengeluaran pribadi (Streamlit + SQLite + snapshot GitHub).
 
 from __future__ import annotations
 
@@ -29,86 +29,70 @@ st.set_page_config(
 
 st.markdown(
     """
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
     :root {
-        --bg: #FAFAFB;
-        --surface: #FFFFFF;
-        --surface-2: #F4F4F6;
-        --text: #111827;
+        --bg: #FFFFFF;
+        --surface: #F7F7F8;
+        --text: #1A1A1A;
         --muted: #6B7280;
-        --muted-2: #9CA3AF;
         --border: #E5E7EB;
-        --border-strong: #D1D5DB;
-        --accent: #111827;
-        --accent-hover: #1F2937;
+        --accent: #1A1A1A;
+        --accent-hover: #333333;
         --danger: #DC2626;
         --success: #16A34A;
         --warning: #D97706;
-        --radius: 10px;
-        --shadow-sm: 0 1px 2px rgba(17,24,39,0.04);
-        --shadow-md: 0 4px 12px rgba(17,24,39,0.06);
     }
-    html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     .stApp { background-color: var(--bg); }
-    .block-container { padding-top: 1.75rem; padding-bottom: 3rem; max-width: 1180px; }
-
-    h1 { color: var(--text); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
-    h2 { color: var(--text); font-weight: 600; font-size: 1.15rem; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; }
-    h3 { color: var(--text); font-weight: 600; font-size: 1rem; margin: 1.25rem 0 0.5rem; }
-    p { color: var(--muted); }
-    .stCaption, [data-testid="stCaptionContainer"] { color: var(--muted-2); font-size: 0.85rem; }
+    .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1200px; }
+    h1, h2, h3 { color: var(--text); font-weight: 600; letter-spacing: -0.01em; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    h3 { font-size: 1.05rem; margin-top: 1rem; }
+    p, span, label, .stCaption { color: var(--muted); }
+    .stCaption { font-size: 0.85rem; }
+    .stDivider { margin: 1.5rem 0; }
 
     /* sidebar */
     section[data-testid="stSidebar"] {
         background-color: var(--surface);
         border-right: 1px solid var(--border);
     }
-    section[data-testid="stSidebar"] > div { padding-top: 1.5rem; }
     section[data-testid="stSidebar"] .stRadio label {
         font-size: 0.9rem;
         color: var(--text);
-        padding: 0.35rem 0.5rem;
-        border-radius: 6px;
     }
-    section[data-testid="stSidebar"] .stRadio label:hover { background-color: var(--surface-2); }
 
     /* inputs */
-    .stTextInput input, .stNumberInput input, .stDateInput input, .stSelectbox div[data-baseweb="select"] > div {
-        background-color: var(--surface);
+    .stTextInput input, .stNumberInput input, .stDateInput input, .stSelectbox select {
+        background-color: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 6px;
         color: var(--text);
         font-size: 0.9rem;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .stTextInput input:focus, .stNumberInput input:focus, .stDateInput input:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+        box-shadow: 0 0 0 2px rgba(26,26,26,0.08);
     }
 
     /* buttons */
     .stButton button, .stDownloadButton button {
-        border-radius: 8px;
+        border-radius: 6px;
         font-weight: 500;
-        font-size: 0.875rem;
+        font-size: 0.9rem;
         border: 1px solid var(--border);
-        background-color: var(--surface);
+        background-color: var(--bg);
         color: var(--text);
         transition: all 0.15s ease;
-        box-shadow: var(--shadow-sm);
     }
     .stButton button:hover, .stDownloadButton button:hover {
-        border-color: var(--border-strong);
-        background-color: var(--surface-2);
+        border-color: var(--accent);
+        background-color: var(--surface);
     }
     .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] {
         background-color: var(--accent);
         color: #FFFFFF;
         border-color: var(--accent);
-        box-shadow: var(--shadow-sm);
     }
     .stButton button[kind="primary"]:hover {
         background-color: var(--accent-hover);
@@ -119,32 +103,26 @@ st.markdown(
     [data-testid="stMetric"] {
         background-color: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 1rem 1.1rem;
-        box-shadow: var(--shadow-sm);
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
     }
-    [data-testid="stMetricLabel"] { color: var(--muted); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
-    [data-testid="stMetricValue"] { color: var(--text); font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+    [data-testid="stMetricLabel"] { color: var(--muted); font-size: 0.8rem; }
+    [data-testid="stMetricValue"] { color: var(--text); font-size: 1.15rem; font-weight: 600; }
 
     /* dataframes */
-    .stDataFrame { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .stDataFrame { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 
     /* progress */
-    .stProgress > div > div { background-color: var(--accent); border-radius: 999px; }
-    .stProgress > div { background-color: var(--surface-2); border-radius: 999px; }
+    .stProgress > div > div { background-color: var(--accent); }
 
-    /* alerts */
-    .stSuccess { background-color: #F0FDF4; border-left: 3px solid var(--success); border-radius: 8px; }
-    .stError { background-color: #FEF2F2; border-left: 3px solid var(--danger); border-radius: 8px; }
-    .stWarning { background-color: #FFFBEB; border-left: 3px solid var(--warning); border-radius: 8px; }
-    .stInfo { background-color: var(--surface-2); border-left: 3px solid var(--border-strong); border-radius: 8px; }
-
-    /* divider */
-    hr { border-color: var(--border); margin: 1.5rem 0; }
+    /* toast / success */
+    .stSuccess { background-color: #F0FDF4; border-left: 3px solid var(--success); }
+    .stError { background-color: #FEF2F2; border-left: 3px solid var(--danger); }
+    .stWarning { background-color: #FFFBEB; border-left: 3px solid var(--warning); }
+    .stInfo { background-color: var(--surface); border-left: 3px solid var(--border); }
 
     /* hide streamlit chrome */
-    #MainMenu, footer { visibility: hidden; }
-    header[data-testid="stHeader"] { background: transparent; }
+    #MainMenu, footer, header { visibility: hidden; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -159,24 +137,19 @@ PBKDF2_ITERATIONS = 260_000
 PASSWORD_KEY = "password_hash"
 SALT_KEY = "password_salt"
 
-
 # ---------------------------------------------------------------- helpers
-
 
 def rupiah(value: float) -> str:
     return "Rp " + f"{int(round(value)):,}".replace(",", ".")
-
 
 def month_label(month: str) -> str:
     year, mon = month.split("-")
     return f"{ID_MONTHS[int(mon) - 1]} {year}"
 
-
 def month_bounds(month: str) -> tuple[str, str]:
     year, mon = (int(p) for p in month.split("-"))
     last = calendar.monthrange(year, mon)[1]
     return f"{month}-01", f"{month}-{last:02d}"
-
 
 def month_options(current: str, include_budgets: bool = False) -> list[str]:
     months = set(db.months_with_data()) | {current}
@@ -184,35 +157,28 @@ def month_options(current: str, include_budgets: bool = False) -> list[str]:
         months |= set(db.months_with_budgets())
     return sorted(months, reverse=True)
 
-
 def show_flash() -> None:
     message = st.session_state.pop("flash", None)
     if message:
         st.success(message)
 
-
 def safe_index(options: list, value) -> int:
     return options.index(value) if value in options else 0
 
-
 # ---------------------------------------------------------------- password
-
 
 def password_is_set() -> bool:
     return bool(db.get_setting(PASSWORD_KEY))
-
 
 def hash_password(password: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256", password.encode(), bytes.fromhex(salt), PBKDF2_ITERATIONS
     ).hex()
 
-
 def set_password(password: str) -> None:
     salt = secrets.token_hex(16)
     db.set_setting(SALT_KEY, salt)
     db.set_setting(PASSWORD_KEY, hash_password(password, salt))
-
 
 def check_password(password: str) -> bool:
     salt = db.get_setting(SALT_KEY)
@@ -223,7 +189,6 @@ def check_password(password: str) -> bool:
 
 
 # ---------------------------------------------------------------- sync
-
 
 def get_sync_repo() -> github_store.GitHubDataRepo | None:
     try:
@@ -339,7 +304,6 @@ def after_write(message: str) -> None:
 
 # ---------------------------------------------------------------- login gate
 
-
 def render_gate() -> None:
     st.title("Rekap Bayar Kas")
     st.caption("Catat pengeluaran harian, pantau budget, lihat rekap bulanan.")
@@ -373,7 +337,6 @@ def render_gate() -> None:
 
 
 # ---------------------------------------------------------------- pages
-
 
 def page_input(today: date) -> None:
     st.subheader("Tambah pengeluaran")
@@ -543,7 +506,7 @@ def page_dashboard(today: date) -> None:
         fig = px.pie(
             by_cat, names="category", values="amount", hole=0.5,
             title="Pengeluaran per kategori",
-            color_discrete_sequence=["#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB"],
+            color_discrete_sequence=["#1A1A1A", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB"],
         )
         fig.update_traces(
             textinfo="percent+label",
@@ -562,7 +525,7 @@ def page_dashboard(today: date) -> None:
             by_cat.sort_values("amount"), x="amount", y="category",
             orientation="h", title="Peringkat kategori",
             labels={"amount": "Nominal", "category": ""},
-            color_discrete_sequence=["#111827"],
+            color_discrete_sequence=["#1A1A1A"],
         )
         fig2.update_traces(hovertemplate="%{y}<br>Rp %{x:,.0f}<extra></extra>")
         fig2.update_layout(
@@ -581,7 +544,7 @@ def page_dashboard(today: date) -> None:
         labels={"tanggal": "Tanggal", "amount": "Nominal"},
     )
     fig3.update_traces(
-        line_color="#111827", marker_color="#111827",
+        line_color="#1A1A1A", marker_color="#1A1A1A",
         hovertemplate="Tgl %{x}<br>Rp %{y:,.0f}<extra></extra>",
     )
     fig3.update_layout(
@@ -901,11 +864,6 @@ def page_settings() -> None:
                             st.session_state["sync_dirty"] = False
                             st.session_state["sync_error"] = None
                             st.session_state.pop("confirm_pull", None)
-                            st.session_state["boot_done"] = False
-                            st.session_state["flash"] = (
-                                "Database lokal diganti dengan snapshot repo."
-                            )
-                            st.rerun()
             with col_b:
                 if st.button("Batal", key="cancel_pull"):
                     st.session_state.pop("confirm_pull", None)
@@ -979,9 +937,7 @@ def page_settings() -> None:
         st.session_state.pop("unlocked", None)
         st.rerun()
 
-
 # ---------------------------------------------------------------- main
-
 
 def main() -> None:
     bootstrap()
@@ -994,7 +950,7 @@ def main() -> None:
     state = sync_state()
 
     with st.sidebar:
-        st.markdown("#### Rekap Bayar Kas")
+        st.markdown("### Rekap Bayar Kas")
         st.caption("Pencatat pengeluaran pribadi")
         page = st.radio(
             "Menu",
@@ -1004,13 +960,13 @@ def main() -> None:
         st.divider()
         if state.enabled:
             badge = {
-                "Tersinkron": "●",
-                "Error": "●",
-                "Ada perubahan belum terkirim": "●",
-            }.get(state.status, "○")
-            st.caption(f"{badge} GitHub: {state.status}")
+                "Tersinkron": "ok",
+                "Error": "err",
+                "Ada perubahan belum terkirim": "pending",
+            }.get(state.status, "off")
+            st.caption(f"{badge} · GitHub: {state.status}")
         else:
-            st.caption("○ GitHub: sync nonaktif")
+            st.caption("off · GitHub: sync nonaktif")
 
     if state.enabled and state.error:
         st.error(f"Sync GitHub: {state.error}")
@@ -1030,3 +986,6 @@ def main() -> None:
 
 
 main()
+
+
+""",
