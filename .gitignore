@@ -1,0 +1,22 @@
+# database lokal
+data/
+*.db
+*.db-journal
+*.sqlite3
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# streamlit
+.streamlit/secrets.toml
+.last_sync
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
