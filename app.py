@@ -1,7 +1,4 @@
-"""Aplikasi pencatat pengeluaran pribadi (Streamlit + SQLite + snapshot GitHub).
-
-Jalankan lokal:  streamlit run app.py
-"""
+"""Aplikasi pencatat pengeluaran pribadi (Streamlit + SQLite + snapshot GitHub)."""
 
 from __future__ import annotations
 
@@ -21,7 +18,137 @@ import github_store
 import sync
 from exporter import build_pdf
 
-st.set_page_config(page_title="Rekap Bayar Kas", page_icon="🧾", layout="wide")
+st.set_page_config(
+    page_title="Rekap Bayar Kas",
+    page_icon="R",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ---------------------------------------------------------------- theme CSS
+
+st.markdown(
+    """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg: #FAFAFB;
+        --surface: #FFFFFF;
+        --surface-2: #F4F4F6;
+        --text: #111827;
+        --muted: #6B7280;
+        --muted-2: #9CA3AF;
+        --border: #E5E7EB;
+        --border-strong: #D1D5DB;
+        --accent: #111827;
+        --accent-hover: #1F2937;
+        --danger: #DC2626;
+        --success: #16A34A;
+        --warning: #D97706;
+        --radius: 10px;
+        --shadow-sm: 0 1px 2px rgba(17,24,39,0.04);
+        --shadow-md: 0 4px 12px rgba(17,24,39,0.06);
+    }
+    html, body, [class*="css"] { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .stApp { background-color: var(--bg); }
+    .block-container { padding-top: 1.75rem; padding-bottom: 3rem; max-width: 1180px; }
+
+    h1 { color: var(--text); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
+    h2 { color: var(--text); font-weight: 600; font-size: 1.15rem; letter-spacing: -0.01em; margin: 1.75rem 0 0.75rem; }
+    h3 { color: var(--text); font-weight: 600; font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+    p { color: var(--muted); }
+    .stCaption, [data-testid="stCaptionContainer"] { color: var(--muted-2); font-size: 0.85rem; }
+
+    /* sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: var(--surface);
+        border-right: 1px solid var(--border);
+    }
+    section[data-testid="stSidebar"] > div { padding-top: 1.5rem; }
+    section[data-testid="stSidebar"] .stRadio label {
+        font-size: 0.9rem;
+        color: var(--text);
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+    }
+    section[data-testid="stSidebar"] .stRadio label:hover { background-color: var(--surface-2); }
+
+    /* inputs */
+    .stTextInput input, .stNumberInput input, .stDateInput input, .stSelectbox div[data-baseweb="select"] > div {
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 0.9rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stTextInput input:focus, .stNumberInput input:focus, .stDateInput input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+    }
+
+    /* buttons */
+    .stButton button, .stDownloadButton button {
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border: 1px solid var(--border);
+        background-color: var(--surface);
+        color: var(--text);
+        transition: all 0.15s ease;
+        box-shadow: var(--shadow-sm);
+    }
+    .stButton button:hover, .stDownloadButton button:hover {
+        border-color: var(--border-strong);
+        background-color: var(--surface-2);
+    }
+    .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] {
+        background-color: var(--accent);
+        color: #FFFFFF;
+        border-color: var(--accent);
+        box-shadow: var(--shadow-sm);
+    }
+    .stButton button[kind="primary"]:hover {
+        background-color: var(--accent-hover);
+        border-color: var(--accent-hover);
+    }
+
+    /* metric cards */
+    [data-testid="stMetric"] {
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.1rem;
+        box-shadow: var(--shadow-sm);
+    }
+    [data-testid="stMetricLabel"] { color: var(--muted); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    [data-testid="stMetricValue"] { color: var(--text); font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+
+    /* dataframes */
+    .stDataFrame { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+
+    /* progress */
+    .stProgress > div > div { background-color: var(--accent); border-radius: 999px; }
+    .stProgress > div { background-color: var(--surface-2); border-radius: 999px; }
+
+    /* alerts */
+    .stSuccess { background-color: #F0FDF4; border-left: 3px solid var(--success); border-radius: 8px; }
+    .stError { background-color: #FEF2F2; border-left: 3px solid var(--danger); border-radius: 8px; }
+    .stWarning { background-color: #FFFBEB; border-left: 3px solid var(--warning); border-radius: 8px; }
+    .stInfo { background-color: var(--surface-2); border-left: 3px solid var(--border-strong); border-radius: 8px; }
+
+    /* divider */
+    hr { border-color: var(--border); margin: 1.5rem 0; }
+
+    /* hide streamlit chrome */
+    #MainMenu, footer { visibility: hidden; }
+    header[data-testid="stHeader"] { background: transparent; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 ID_MONTHS = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -41,7 +168,6 @@ def rupiah(value: float) -> str:
 
 
 def month_label(month: str) -> str:
-    """'2026-11' -> 'November 2026'"""
     year, mon = month.split("-")
     return f"{ID_MONTHS[int(mon) - 1]} {year}"
 
@@ -59,13 +185,14 @@ def month_options(current: str, include_budgets: bool = False) -> list[str]:
     return sorted(months, reverse=True)
 
 
-# Pesan sukses diantre lewat st.session_state["flash"] SEBELUM st.rerun(), lalu
-# ditampilkan show_flash() di halaman tujuan. st.success() langsung tidak akan
-# terlihat kalau halaman langsung rerun.
 def show_flash() -> None:
-    message = st.session_state.get("flash", None)
+    message = st.session_state.pop("flash", None)
     if message:
         st.success(message)
+
+
+def safe_index(options: list, value) -> int:
+    return options.index(value) if value in options else 0
 
 
 # ---------------------------------------------------------------- password
@@ -99,10 +226,9 @@ def check_password(password: str) -> bool:
 
 
 def get_sync_repo() -> github_store.GitHubDataRepo | None:
-    """Koneksi repo data dari secrets Streamlit, atau env var kalau dijalankan lokal."""
     try:
         cfg = st.secrets.get("github", {})
-    except Exception:  # secrets.toml tidak ada
+    except Exception:
         cfg = {}
     repo = github_store.repo_from_config(
         cfg.get("token", ""),
@@ -128,7 +254,6 @@ def sync_state() -> sync.SyncState:
 
 
 def bootstrap() -> None:
-    """Sekali per session: siapkan DB lokal, lalu tarik snapshot terbaru dari repo data."""
     if st.session_state.get("boot_done"):
         return
 
@@ -138,17 +263,13 @@ def bootstrap() -> None:
     st.session_state.setdefault("sync_dirty", False)
     st.session_state.setdefault("sync_error", None)
 
-    # Dicatat SEBELUM init_db, karena init_db membuat file DB kosong bila belum ada.
-    # Tanpa ini, DB kosong bisa dikira "data lokal" dan menimpa snapshot di repo.
     existed_before = sync.local_db_exists()
 
     if repo is not None:
-        # DB lokal yang lebih baru dari penanda sync = ada perubahan belum terkirim
-        # (mis. push gagal karena jaringan). Data lokal menang, jangan ditimpa repo.
         unsent = existed_before and sync.local_is_newer_than_sync()
 
         if unsent:
-            db.init_db()  # migrasi skema dulu supaya yang diunggah sudah versi terbaru
+            db.init_db()
             try:
                 remote_sha = repo.get_sha(sync.DB_FILE)
                 st.session_state["sync_sha"] = sync.push_to_repo(
@@ -170,7 +291,6 @@ def bootstrap() -> None:
                     st.session_state["sync_sha"] = sha
                     st.session_state["sync_note"] = "Database dipulihkan dari repo GitHub."
                 elif existed_before:
-                    # Repo masih kosong tapi lokal sudah berisi: unggah sebagai snapshot awal.
                     db.init_db()
                     try:
                         st.session_state["sync_sha"] = sync.push_to_repo(
@@ -186,17 +306,12 @@ def bootstrap() -> None:
     db.init_db()
 
     if repo is not None and not st.session_state.get("sync_dirty"):
-        # init_db bisa menyentuh file DB (buat tabel baru), jadi mtime kas.db naik.
-        # Segarkan penanda sync supaya perubahan skema saja tidak dianggap data
-        # yang belum terkirim. Saat sync nonaktif penanda sengaja tidak disentuh,
-        # supaya data lokal tidak dianggap sudah tersinkron.
         sync.remember_sidecar()
 
     st.session_state["boot_done"] = True
 
 
 def push_sync(message: str) -> None:
-    """Kirim snapshot ke repo data. Tidak pernah melempar exception ke UI."""
     repo = st.session_state.get("sync_repo")
     if repo is None:
         return
@@ -226,11 +341,12 @@ def after_write(message: str) -> None:
 
 
 def render_gate() -> None:
-    st.title("🧾 Rekap Bayar Kas")
+    st.title("Rekap Bayar Kas")
+    st.caption("Catat pengeluaran harian, pantau budget, lihat rekap bulanan.")
 
     if not password_is_set():
         st.caption("Pertama kali dipakai — buat password untuk membuka aplikasi.")
-        with st.form("create_password"):
+        with st.form("create_password", clear_on_submit=True):
             p1 = st.text_input("Password baru", type="password")
             p2 = st.text_input("Ulangi password", type="password")
             if st.form_submit_button("Simpan password", type="primary", use_container_width=True):
@@ -246,9 +362,9 @@ def render_gate() -> None:
         return
 
     st.caption("Masukkan password untuk membuka aplikasi.")
-    with st.form("login"):
+    with st.form("login", clear_on_submit=True):
         pw = st.text_input("Password", type="password")
-        if st.form_submit_button("Buka", type="primary", use_container_width=True):
+        if st.form_submit_button("Masuk", type="primary", use_container_width=True):
             if check_password(pw):
                 st.session_state["unlocked"] = True
                 st.rerun()
@@ -298,14 +414,13 @@ def render_transaction_table(today: date) -> None:
 
     col1, col2 = st.columns(2)
     with col1:
-        # index=0 dipakai kalau bulan berjalan sudah tidak ada di daftar (mis. setelah
-        # semua transaksi bulan ini dihapus), supaya tidak IndexError.
-        default = (
-            options.index(month_label(current)) if month_label(current) in options else 0
+        chosen = st.selectbox(
+            "Periode", options, index=safe_index(options, month_label(current))
         )
-        chosen = st.selectbox("Periode", options, index=default)
     with col2:
-        chosen_cat = st.selectbox("Kategori", ["Semua kategori"] + sorted(db.categories_in_use()))
+        chosen_cat = st.selectbox(
+            "Kategori", ["Semua kategori"] + sorted(db.categories_in_use())
+        )
 
     start = end = None
     if chosen != "Semua bulan":
@@ -357,7 +472,7 @@ def render_transaction_table(today: date) -> None:
             e_cat = st.selectbox(
                 "Kategori",
                 cats,
-                index=cats.index(row["category"]) if row["category"] in cats else 0,
+                index=safe_index(cats, row["category"]),
             )
             e_desc = st.text_input("Keterangan", value=row["description"])
             e_amount = st.number_input(
@@ -425,31 +540,55 @@ def page_dashboard(today: date) -> None:
 
     col_left, col_right = st.columns(2)
     with col_left:
-        fig = px.pie(by_cat, names="category", values="amount", hole=0.45,
-                     title="Pengeluaran per kategori")
+        fig = px.pie(
+            by_cat, names="category", values="amount", hole=0.5,
+            title="Pengeluaran per kategori",
+            color_discrete_sequence=["#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB"],
+        )
         fig.update_traces(
             textinfo="percent+label",
             hovertemplate="%{label}<br>Rp %{value:,.0f}<extra></extra>",
         )
-        fig.update_layout(showlegend=False, margin=dict(t=50, b=10, l=10, r=10))
+        fig.update_layout(
+            showlegend=False,
+            margin=dict(t=40, b=10, l=10, r=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     with col_right:
-        fig2 = px.bar(by_cat.sort_values("amount"), x="amount", y="category",
-                      orientation="h", title="Peringkat kategori",
-                      labels={"amount": "Nominal", "category": ""})
+        fig2 = px.bar(
+            by_cat.sort_values("amount"), x="amount", y="category",
+            orientation="h", title="Peringkat kategori",
+            labels={"amount": "Nominal", "category": ""},
+            color_discrete_sequence=["#111827"],
+        )
         fig2.update_traces(hovertemplate="%{y}<br>Rp %{x:,.0f}<extra></extra>")
-        fig2.update_layout(margin=dict(t=50, b=10, l=10, r=10),
-                           xaxis=dict(tickformat=",.0f"))
+        fig2.update_layout(
+            margin=dict(t=40, b=10, l=10, r=10),
+            xaxis=dict(tickformat=",.0f"),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     daily = df.groupby(df["tx_date"].dt.day)["amount"].sum().reset_index()
     daily.columns = ["tanggal", "amount"]
-    fig3 = px.line(daily, x="tanggal", y="amount", markers=True,
-                   title="Tren pengeluaran harian",
-                   labels={"tanggal": "Tanggal", "amount": "Nominal"})
-    fig3.update_traces(hovertemplate="Tgl %{x}<br>Rp %{y:,.0f}<extra></extra>")
-    fig3.update_layout(margin=dict(t=50, b=10, l=10, r=10))
+    fig3 = px.line(
+        daily, x="tanggal", y="amount", markers=True,
+        title="Tren pengeluaran harian",
+        labels={"tanggal": "Tanggal", "amount": "Nominal"},
+    )
+    fig3.update_traces(
+        line_color="#111827", marker_color="#111827",
+        hovertemplate="Tgl %{x}<br>Rp %{y:,.0f}<extra></extra>",
+    )
+    fig3.update_layout(
+        margin=dict(t=40, b=10, l=10, r=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
     st.plotly_chart(fig3, use_container_width=True)
 
 
@@ -541,15 +680,16 @@ def page_budget(today: date) -> None:
             st.markdown(f"**{b['category']}** — {rupiah(used)} / {rupiah(b['amount'])}")
             st.progress(min(ratio, 1.0))
             if ratio >= 1:
-                st.caption(f"🔴 Lewat budget {rupiah(abs(remaining))}")
+                st.caption(f"Lewat budget {rupiah(abs(remaining))}")
             elif ratio >= 0.8:
-                st.caption(f"🟡 Hampir habis, sisa {rupiah(remaining)}")
+                st.caption(f"Hampir habis, sisa {rupiah(remaining)}")
             else:
-                st.caption(f"🟢 Sisa {rupiah(remaining)}")
+                st.caption(f"Sisa {rupiah(remaining)}")
         with col2:
             if st.button("Hapus", key=f"del_budget_{b['id']}", use_container_width=True):
                 db.delete_budget(b["id"])
                 after_write(f"Hapus budget {b['category']} {month}")
+                st.session_state["flash"] = f"Budget {b['category']} dihapus."
                 st.rerun()
 
 
@@ -563,8 +703,7 @@ def page_categories() -> None:
         counts[r["category"]] = counts.get(r["category"], 0) + 1
 
     st.caption(
-        "Kategori bawaan tidak bisa dihapus. Kategori tambahan akan muncul di semua "
-        "pilihan kategori setelah dipakai di transaksi."
+        "Kategori bawaan tidak bisa dihapus. Kategori tambahan muncul setelah dipakai."
     )
 
     if used:
@@ -575,7 +714,6 @@ def page_categories() -> None:
 
     st.divider()
     st.markdown("**Ganti nama / gabung kategori**")
-    st.caption("Berguna untuk merapikan salah ketik, mis. \"makan\" → \"Makan & Minum\".")
     if used:
         with st.form("merge_category"):
             col1, col2 = st.columns(2)
@@ -591,8 +729,8 @@ def page_categories() -> None:
                     st.warning("Kategori lama dan tujuan sama.")
                 else:
                     n = db.merge_old_categories({old: target})
-                    after_write(f"Gabung kategori {old} → {target}")
-                    st.session_state["flash"] = f"{n} transaksi dipindah dari {old} ke {target}."
+                    after_write(f"Gabung kategori {old} -> {target}")
+                    st.session_state["flash"] = f"{n} transaksi dipindah."
                     st.rerun()
 
     st.divider()
@@ -602,14 +740,12 @@ def page_categories() -> None:
         st.caption("Tidak ada kategori tambahan.")
     else:
         victim = st.selectbox("Kategori", extra, key="del_cat")
-        st.caption("Transaksi kategori ini akan dipindah ke **Lainnya**.")
+        st.caption("Transaksi kategori ini akan dipindah ke Lainnya.")
         confirm = st.checkbox(f"Ya, hapus kategori {victim}", key="confirm_del_cat")
         if st.button("Hapus kategori", disabled=not confirm):
             db.delete_category(victim)
             after_write(f"Hapus kategori {victim}")
-            st.session_state["flash"] = (
-                f"Kategori {victim} dihapus, transaksinya dipindah ke Lainnya."
-            )
+            st.session_state["flash"] = f"Kategori {victim} dihapus."
             st.rerun()
 
 
@@ -666,7 +802,7 @@ def page_export(today: date) -> None:
     col_xls, col_pdf = st.columns(2)
     with col_xls:
         st.download_button(
-            "⬇️ Download Excel",
+            "Download Excel",
             data=excel_buf.getvalue(),
             file_name=f"rekap-pengeluaran-{suffix}-{stamp}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -675,7 +811,7 @@ def page_export(today: date) -> None:
         )
     with col_pdf:
         st.download_button(
-            "⬇️ Download PDF",
+            "Download PDF",
             data=pdf_bytes,
             file_name=f"rekap-pengeluaran-{suffix}-{stamp}.pdf",
             mime="application/pdf",
@@ -690,7 +826,7 @@ def page_export(today: date) -> None:
 
     st.markdown("**Export CSV (data mentah)**")
     st.download_button(
-        "⬇️ Download CSV",
+        "Download CSV",
         data=df.assign(Tanggal=df["Tanggal"].dt.strftime("%Y-%m-%d"))
         .to_csv(index=False)
         .encode("utf-8"),
@@ -721,7 +857,7 @@ def page_settings() -> None:
         )
         st.caption(
             "Lokal: simpan di `.streamlit/secrets.toml`. "
-            "Streamlit Cloud: Settings → Secrets."
+            "Streamlit Cloud: Settings -> Secrets."
         )
     else:
         st.caption(f"Repo data: `{state.repo}` · branch `{state.branch}`")
@@ -805,7 +941,7 @@ def page_settings() -> None:
     st.divider()
     st.markdown("**Backup manual**")
     st.download_button(
-        "⬇️ Unduh kas.db",
+        "Unduh kas.db",
         data=sync.snapshot_bytes(),
         file_name=f"kas-{datetime.now().strftime('%Y%m%d-%H%M')}.db",
         mime="application/octet-stream",
@@ -840,8 +976,6 @@ def page_settings() -> None:
     st.divider()
     st.markdown("**Kunci aplikasi**")
     if st.button("Keluar sekarang"):
-        # Kunci lagi aplikasi. Session Streamlit milik satu browser, jadi ini cukup
-        # untuk mencegah orang lain memakai tab yang sedang terbuka.
         st.session_state.pop("unlocked", None)
         st.rerun()
 
@@ -860,7 +994,8 @@ def main() -> None:
     state = sync_state()
 
     with st.sidebar:
-        st.markdown("### 🧾 Rekap Bayar Kas")
+        st.markdown("#### Rekap Bayar Kas")
+        st.caption("Pencatat pengeluaran pribadi")
         page = st.radio(
             "Menu",
             ["Input", "Dashboard", "Budget", "Kategori", "Export", "Pengaturan"],
@@ -869,20 +1004,16 @@ def main() -> None:
         st.divider()
         if state.enabled:
             badge = {
-                "Tersinkron": "🟢",
-                "Error": "🔴",
-                "Ada perubahan belum terkirim": "🟡",
-            }.get(state.status, "⚪")
+                "Tersinkron": "●",
+                "Error": "●",
+                "Ada perubahan belum terkirim": "●",
+            }.get(state.status, "○")
             st.caption(f"{badge} GitHub: {state.status}")
         else:
-            st.caption("⚪ GitHub: sync nonaktif")
+            st.caption("○ GitHub: sync nonaktif")
 
-    note = st.session_state.pop("sync_note", None)
-    if note:
-        st.info(note)
     if state.enabled and state.error:
         st.error(f"Sync GitHub: {state.error}")
-
 
     if page == "Input":
         page_input(today)
